@@ -22,6 +22,11 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+
+### vs code ###
+.vscode
+
+
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml

@@ -3,7 +3,7 @@ version: '3.7'
 services:
   app-server:
     build:
-      context: spring-mail-app # Use an image built from the specified dockerfile in the `polling-app-server` directory.
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
