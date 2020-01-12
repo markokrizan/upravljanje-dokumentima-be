@@ -30,7 +30,7 @@ CREATE TABLE `user_roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `polls` (
+CREATE TABLE `mail` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `question` varchar(140) NOT NULL,
   `expiration_date_time` datetime NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE `choices` (
   `poll_id` bigint(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `fk_choices_poll_id` (`poll_id`),
-  CONSTRAINT `fk_choices_poll_id` FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`)
+  CONSTRAINT `fk_choices_poll_id` FOREIGN KEY (`poll_id`) REFERENCES `mail` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -64,6 +64,6 @@ CREATE TABLE `votes` (
   KEY `fk_votes_poll_id` (`poll_id`),
   KEY `fk_votes_choice_id` (`choice_id`),
   CONSTRAINT `fk_votes_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
-  CONSTRAINT `fk_votes_poll_id` FOREIGN KEY (`poll_id`) REFERENCES `polls` (`id`),
+  CONSTRAINT `fk_votes_poll_id` FOREIGN KEY (`poll_id`) REFERENCES `mail` (`id`),
   CONSTRAINT `fk_votes_choice_id` FOREIGN KEY (`choice_id`) REFERENCES `choices` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
