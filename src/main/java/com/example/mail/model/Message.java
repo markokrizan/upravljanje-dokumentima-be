@@ -15,7 +15,6 @@ public class Message {
 
     @Lob
     @NotNull
-    @Column(name="`from`")
     private String from;
 
     @NotNull
@@ -29,16 +28,14 @@ public class Message {
     private String bcc;
 
     @NotNull
-    @Column(name="`date_time`")
     private Date dateTime;
 
-    @Column(length = 255, name="`subject`")
+    @NotNull
     private String subject;
 
     @Lob
     private String content;
 
-    @Column( name="`read`")
     private Boolean read = false;
 
     @Enumerated(EnumType.STRING)
