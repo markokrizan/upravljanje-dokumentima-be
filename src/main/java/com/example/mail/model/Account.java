@@ -2,6 +2,8 @@ package com.example.mail.model;
 
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "accounts")
 public class Account {   
@@ -30,11 +32,8 @@ public class Account {
     private String displayName;
 
     @ManyToOne
-    @JoinColumn(name="contact_id", nullable=true)
-    private Contact contact;
-
-    @ManyToOne
     @JoinColumn(name="user_id", nullable=false)
+    @JsonIgnore
     private User user;
 
     public Long getId() {
@@ -107,14 +106,6 @@ public class Account {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
-    }
-
-    public Contact getContact() {
-        return contact;
-    }
-
-    public void setContact(Contact contact) {
-        this.contact = contact;
     }
 
     public User getUser() {
