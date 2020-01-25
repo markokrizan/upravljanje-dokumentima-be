@@ -53,7 +53,7 @@ public class AuthController {
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsernameOrEmail(),
+                        loginRequest.getUsername(),
                         loginRequest.getPassword()
                 )
         );
@@ -70,15 +70,13 @@ public class AuthController {
             return new ResponseEntity(new ApiResponse(false, "Username is already taken!"),
                     HttpStatus.BAD_REQUEST);
         }
-
-        if(userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return new ResponseEntity(new ApiResponse(false, "Email Address already in use!"),
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        // Creating user's account
-        User user = new User(signUpRequest.getName(), signUpRequest.getUsername(),
-                signUpRequest.getEmail(), signUpRequest.getPassword());
+        
+        User user = new User(
+                signUpRequest.getFirstName(), 
+                signUpRequest.getLastName(),
+                signUpRequest.getUsername(),
+                signUpRequest.getPassword()
+        );
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
