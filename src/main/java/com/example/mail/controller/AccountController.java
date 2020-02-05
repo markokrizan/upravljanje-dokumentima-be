@@ -43,10 +43,17 @@ public class AccountController {
 
     @PostMapping("/accounts")
     @PreAuthorize("hasRole('USER')")
-    public Account store(@Valid @RequestBody AccountRequest accountRequest, @CurrentUser UserPrincipal currentUser) {
+    public Account save(@Valid @RequestBody AccountRequest accountRequest, @CurrentUser UserPrincipal currentUser) {
         Account account = modelMapper.map(accountRequest, Account.class);
         account.setUser(userRepository.findById(currentUser.getId()).get());
         
         return accountRepository.save(account);
     }
+
+    @DeleteMapping("/accounts/{accountId}")
+    @PreAuthorize("hasRole('USER')")
+    public void delete(Long accountId) {    
+        accountRepository.deleteById(accountId);
+    }
+
 }
