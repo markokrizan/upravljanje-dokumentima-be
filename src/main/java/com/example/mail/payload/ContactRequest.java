@@ -1,42 +1,29 @@
-package com.example.mail.model;
+package com.example.mail.payload;
 
-import java.util.Set;
+import javax.validation.constraints.NotBlank;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import org.springframework.web.multipart.MultipartFile;
 
-@Entity
-@Table(name = "contacts")
-public class Contact {   
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ContactRequest {
+
     private Long id;
 
-    @NotNull
-    @Column(length = 255)
+    @NotBlank
     private String firstName;
 
-    @NotNull
-    @Column(length = 255)
+    @NotBlank
     private String lastName;
 
-    @NotNull
-    @Column(length = 255)
+    @NotBlank
     private String displayName;
 
-    @NotNull
-    @Column(length = 255)
+    @NotBlank
     private String email;
 
-    @Lob
+    @NotBlank
     private String note;
 
-    @OneToMany(mappedBy="contact")
-    private Set<Photo> photos;
-
-    @ManyToOne
-    @JoinColumn(name="user_id", nullable=false)
-    private User user;
+    private MultipartFile photo;
 
     public Long getId() {
         return id;
@@ -86,19 +73,11 @@ public class Contact {
         this.note = note;
     }
 
-    public Set<Photo> getPhotos() {
-        return photos;
+    public MultipartFile getPhoto() {
+        return photo;
     }
 
-    public void setPhotos(Set<Photo> photos) {
-        this.photos = photos;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
+    public void setPhoto(MultipartFile photo) {
+        this.photo = photo;
     }
 }

@@ -52,7 +52,7 @@ public class AccountController {
 
     @DeleteMapping("/accounts/{accountId}")
     @PreAuthorize("hasRole('USER')")
-    public void delete(Long accountId) {    
+    public void delete(@PathVariable("accountId") Long accountId) {    
         accountRepository.deleteById(accountId);
     }
 
