@@ -58,7 +58,7 @@ public class ContactController {
         contactRepository.save(contact);
 
         if(contactRequest.getPhoto() != null) {
-            String savedImagePath = fileUploadService.upload(contactRequest.getPhoto().getBytes());
+            String savedImagePath = fileUploadService.uploadImage(contactRequest.getPhoto().getBytes());
 
             Photo photo = new Photo();
             photo.setContact(contact);

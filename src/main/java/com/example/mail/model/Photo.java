@@ -2,6 +2,8 @@ package com.example.mail.model;
 
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "photos")
 public class Photo {   
@@ -12,6 +14,7 @@ public class Photo {
     @Column(length = 255)
     private String path;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name="contact_id", nullable=true)
     private Contact contact;

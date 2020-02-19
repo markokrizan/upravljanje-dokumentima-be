@@ -13,7 +13,7 @@ public class FileUploadService {
     private final String STORAGE_LOCATION = "images/";
     private final String FILE_TYPE_JPG = ".jpg";
 
-    public String upload(byte[] fileToUpload) throws IOException {
+    public String uploadImage(byte[] fileToUpload) throws IOException {
         String randomName = UUID.randomUUID().toString();
         String imagePath = STORAGE_LOCATION + randomName + FILE_TYPE_JPG;
     
