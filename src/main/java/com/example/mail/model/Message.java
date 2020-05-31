@@ -38,16 +38,19 @@ public class Message {
 
     private Boolean read = false;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 60)
-    private FolderName folderName;
+    @ManyToOne
+    @JoinColumn(name="folder_id", nullable=false)
+    private Folder folder;
 
     @ManyToOne
-    @JoinColumn(name="user_id", nullable=false)
-    private User user;
+    @JoinColumn(name="account_id", nullable=false)
+    private Account account;
 
     @ManyToMany
     Set<Tag> tags;
+
+    @OneToMany(mappedBy="message")
+    private Set<Attachment> attachments;
 
     public Long getId() {
         return id;
@@ -121,14 +124,6 @@ public class Message {
         this.read = read;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
     public Set<Tag> getTags() {
         return tags;
     }
@@ -137,11 +132,27 @@ public class Message {
         this.tags = tags;
     }
 
-    public FolderName getFolderName() {
-        return folderName;
+    public Folder getFolder() {
+        return folder;
     }
 
-    public void setFolderName(FolderName folderName) {
-        this.folderName = folderName;
+    public void setFolder(Folder folder) {
+        this.folder = folder;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+
+    public Set<Attachment> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(Set<Attachment> attachments) {
+        this.attachments = attachments;
     }
 }
