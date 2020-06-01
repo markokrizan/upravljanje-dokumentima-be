@@ -20,6 +20,13 @@ public class Folder {
     @ManyToOne
     private Folder parentFolder;
 
+    @OneToMany(mappedBy="folder")
+    private Set<Message> messages;
+
+    @ManyToOne
+    @JoinColumn(name="account_id", nullable=false)
+    private Account account;
+
     public Long getId() {
         return id;
     }
@@ -50,5 +57,21 @@ public class Folder {
 
     public void setParentFolder(Folder parentFolder) {
         this.parentFolder = parentFolder;
+    }
+
+    public Set<Message> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(Set<Message> messages) {
+        this.messages = messages;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
     }
 }

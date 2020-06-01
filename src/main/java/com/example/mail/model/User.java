@@ -30,7 +30,7 @@ public class User extends DateAudit {
 
     @NotBlank
     @Size(max = 15)
-    private String username;
+    private String username;        
 
     @NotBlank
     @Size(max = 100)
@@ -42,6 +42,9 @@ public class User extends DateAudit {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy="user")
+    private Set<Account> accounts;
 
     public User() {
 
@@ -100,5 +103,13 @@ public class User extends DateAudit {
 
     public void setRoles(Set<Role> roles) {
         this.roles = roles;
-    }    
+    }
+
+    public Set<Account> getAccounts() {
+        return accounts;
+    }
+
+    public void setAccounts(Set<Account> accounts) {
+        this.accounts = accounts;
+    }
 }

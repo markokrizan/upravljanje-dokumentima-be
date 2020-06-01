@@ -9,6 +9,7 @@ import com.example.mail.payload.AccountRequest;
 import com.example.mail.repository.AccountRepository;
 import com.example.mail.repository.UserRepository;
 import com.example.mail.security.UserPrincipal;
+import com.example.mail.service.AccountService;
 import com.example.mail.security.CurrentUser;
 
 import org.modelmapper.ModelMapper;
@@ -22,6 +23,9 @@ public class AccountController {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private AccountService accountService;
 
     @Autowired
     private UserRepository userRepository;
@@ -43,11 +47,21 @@ public class AccountController {
 
     @PostMapping("/accounts")
     @PreAuthorize("hasRole('USER')")
-    public Account save(@Valid @RequestBody AccountRequest accountRequest, @CurrentUser UserPrincipal currentUser) {
+    public List<Account> save(@Valid @RequestBody AccountRequest accountRequest, @CurrentUser UserPrincipal currentUser) {
         Account account = modelMapper.map(accountRequest, Account.class);
         account.setUser(userRepository.findById(currentUser.getId()).get());
+
+        if(accountRepository.countByUserId(currentUser.getId()) == 0) {
+            account.setIsActive(true);
+        }
+
+        if(accountRequest.getIsActive()) {
+            accountService.toggleActiveAccount(account.getId(), currentUser.getId());
+        }
         
-        return accountRepository.save(account);
+        accountRepository.save(account);
+
+        return accountRepository.findByUserId(currentUser.getId());
     }
 
     @DeleteMapping("/accounts/{accountId}")
@@ -55,5 +69,4 @@ public class AccountController {
     public void delete(@PathVariable("accountId") Long accountId) {    
         accountRepository.deleteById(accountId);
     }
-
 }

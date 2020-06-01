@@ -31,6 +31,8 @@ public class AccountRequest {
     @NotBlank
     private String displayName;
 
+    private Boolean isActive;
+
     public String getSmtpAdress() {
         return smtpAdress;
     }
@@ -101,5 +103,13 @@ public class AccountRequest {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }
