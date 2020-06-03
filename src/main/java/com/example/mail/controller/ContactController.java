@@ -64,6 +64,8 @@ public class ContactController {
             photo.setContact(contact);
             photo.setPath(savedImagePath);
             photoRepository.save(photo);
+
+            contact.getPhotos().add(photo);
         }
 
         return contact;

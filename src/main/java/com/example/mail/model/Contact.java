@@ -1,6 +1,7 @@
 package com.example.mail.model;
 
 import java.util.Set;
+import java.util.HashSet;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
@@ -31,8 +32,8 @@ public class Contact {
     @Lob
     private String note;
 
-    @OneToMany(mappedBy="contact")
-    private Set<Photo> photos;
+    @OneToMany(mappedBy="contact", fetch = FetchType.EAGER)
+    private Set<Photo> photos =  new HashSet<>();
 
     @ManyToOne
     @JoinColumn(name="user_id", nullable=false)
