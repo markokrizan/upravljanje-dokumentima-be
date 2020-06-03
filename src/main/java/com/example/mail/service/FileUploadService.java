@@ -26,4 +26,10 @@ public class FileUploadService {
 
         return imagePath;
     }
+
+    public Boolean removeImage(String filePath) {
+        File image = new File(filePath);
+
+        return image.delete();
+    }
 }

@@ -32,7 +32,7 @@ public class Contact {
     @Lob
     private String note;
 
-    @OneToMany(mappedBy="contact", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy="contact", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Photo> photos =  new HashSet<>();
 
     @ManyToOne

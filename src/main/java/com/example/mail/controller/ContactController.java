@@ -74,7 +74,10 @@ public class ContactController {
     @DeleteMapping("/contacts/{contactId}")
     @PreAuthorize("hasRole('USER')")
     public void delete(@PathVariable("contactId") Long contactId) {    
+        for (Photo photo : contactRepository.findById(contactId).get().getPhotos()) {
+            fileUploadService.removeImage(photo.getPath());
+        }
+
         contactRepository.deleteById(contactId);
     }
-
 }
