@@ -35,7 +35,7 @@ public class FolderController {
 
     @PostMapping("/accounts/{accountId}/folders")
     @PreAuthorize("hasRole('USER')")
-    public Folder save(@Valid @RequestBody FolderRequest folderRequest, @PathVariable("accountId") Long accountId) {
+    public List<Folder> save(@Valid @RequestBody FolderRequest folderRequest, @PathVariable("accountId") Long accountId) {
         Folder folder = modelMapper.map(folderRequest, Folder.class);
         folder.setAccount(accountRepository.findById(accountId).get());
 
@@ -43,6 +43,14 @@ public class FolderController {
             folder.setParentFolder(folderRepository.findById(folderRequest.getParentFolderId()).get());
         }
 
-        return folderRepository.save(folder);
+        folderRepository.save(folder);
+
+        return folderRepository.findByAccountId(accountId);
+    }
+
+    @DeleteMapping("/accounts/{accountId}/folders/{folderId}")
+    @PreAuthorize("hasRole('USER')")
+    public void delete(@PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId) {    
+        folderRepository.deleteById(folderId);
     }
 }

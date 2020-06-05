@@ -1,6 +1,7 @@
 package com.example.mail.model;
 
 import javax.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Set;
 
 @Entity
@@ -14,6 +15,7 @@ public class Folder {
     @Column(length = 255)
     private String name;
 
+    @JsonIgnoreProperties("parentFolder")
     @OneToMany(mappedBy="parentFolder")
     private Set<Folder> subFolders;
 
