@@ -50,7 +50,9 @@ public class FolderController {
 
     @DeleteMapping("/accounts/{accountId}/folders/{folderId}")
     @PreAuthorize("hasRole('USER')")
-    public void delete(@PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId) {    
+    public List<Folder> delete(@PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId) {    
         folderRepository.deleteById(folderId);
+
+        return folderRepository.findByAccountId(accountId); 
     }
 }
