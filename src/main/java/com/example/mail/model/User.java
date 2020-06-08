@@ -112,4 +112,14 @@ public class User extends DateAudit {
     public void setAccounts(Set<Account> accounts) {
         this.accounts = accounts;
     }
+
+    public Account getActivatedAccount() {
+        for(Account account : this.getAccounts()) {
+            if(account.getIsActive()) {
+                return account;
+            }
+        }
+
+        return null;
+    }
 }
