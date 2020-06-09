@@ -25,9 +25,12 @@ public class Folder {
     @OneToMany(mappedBy="folder")
     private Set<Message> messages;
 
+    @JsonIgnoreProperties("folders")
     @ManyToOne
     @JoinColumn(name="account_id", nullable=false)
     private Account account;
+
+    private Integer messageCount = 0;
 
     public Long getId() {
         return id;
@@ -75,5 +78,13 @@ public class Folder {
 
     public void setAccount(Account account) {
         this.account = account;
+    }
+
+    public Integer getMessageCount() {
+        return messageCount;
+    }
+
+    public void setMessageCount(Integer messageCount) {
+        this.messageCount = messageCount;
     }
 }

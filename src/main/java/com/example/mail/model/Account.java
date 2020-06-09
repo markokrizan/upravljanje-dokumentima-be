@@ -1,5 +1,8 @@
 package com.example.mail.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -37,6 +40,9 @@ public class Account {
     @JoinColumn(name="user_id", nullable=false)
     @JsonIgnore
     private User user;
+
+    @OneToMany(mappedBy="account", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<Folder> folders =  new HashSet<>();
 
     public Long getId() {
         return id;
@@ -124,5 +130,21 @@ public class Account {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Set<Folder> getFolders() {
+        return folders;
+    }
+
+    public void setFolders(Set<Folder> folders) {
+        this.folders = folders;
+    }
+    
+    public Boolean isValid() {
+        if(this.getSmtpAdress() == null || this.getSmtpPort() == null || this.getUsername() == null || this.getPassword() == null){
+            return false;
+        }
+
+        return true;
     }
 }

@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
+import java.util.List;
+import java.util.Arrays;
 
 import javax.mail.Address;
 import javax.mail.Folder;
@@ -17,6 +19,8 @@ import javax.mail.Store;
 import javax.mail.Flags.Flag;
 
 import com.example.mail.model.Account;
+import com.example.mail.payload.FolderConnection;
+import com.example.mail.payload.FolderMessages;
 
 @Service
 public class MailService {
@@ -39,19 +43,31 @@ public class MailService {
         return Session.getDefaultInstance(properties);
     }
 
-    public ArrayList<com.example.mail.model.Message> getFolderMessages(String folder, String host, String port, String user, String password) {
+    public FolderConnection connectToFolder(String folder, String host, String port, String user, String password)
+            throws MessagingException {
+
+        Session emailSession = this.initSession(host, port, true);
+
+        Store store = emailSession.getStore(DEFAULT_SESSION_PROTOCOL);
+        store.connect(host, user, password);
+
+        Folder emailFolder = store.getFolder(folder);
+        emailFolder.open(Folder.READ_ONLY);
+
+        return new FolderConnection(emailFolder, store);
+    }
+
+    public FolderMessages getFolderMessages(String folder, String host, String port, String user, String password) {
         ArrayList<com.example.mail.model.Message> parsedMessages = new ArrayList<>();
+        Integer totalMessages = 0;
 
         try {
-            Session emailSession = this.initSession(host, port, true);
+            FolderConnection folderConnection = this.connectToFolder(folder, host, port, user, password);
 
-            Store store = emailSession.getStore(DEFAULT_SESSION_PROTOCOL);
-            store.connect(host, user, password);
+            Folder emailFolder = folderConnection.getFolder();
+            Store store = folderConnection.getStore();
 
-            Folder emailFolder = store.getFolder(folder);
-            emailFolder.open(Folder.READ_ONLY);
-
-            Integer totalMessages = emailFolder.getMessageCount();
+            totalMessages = emailFolder.getMessageCount();
 
             Message[] messages = emailFolder.getMessages(totalMessages - MAX_MESSAGES, totalMessages);
            
@@ -70,7 +86,7 @@ public class MailService {
             e.printStackTrace();
         }
 
-        return parsedMessages;
+        return new FolderMessages(totalMessages, parsedMessages);
     }
 
     public String getFirstAdress(Address[] adresses) {
@@ -105,11 +121,68 @@ public class MailService {
         return modelMessage;
     }
 
-    public ArrayList<com.example.mail.model.Message> getMessages(Account account, String folder){
-        if(account.getSmtpAdress() == null || account.getSmtpPort() == null || account.getUsername() == null || account.getPassword() == null){
+    public Boolean isFolderSupported(String folder) {
+        List<String> supportedFolders = Arrays.asList(SUPPORTED_FOLDERS);
+
+        if(!supportedFolders.contains(folder.toUpperCase())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public FolderMessages getMessages(Account account, String folder){
+        if(!account.isValid()){
             return null;
         }
 
         return getFolderMessages(folder, account.getSmtpAdress(), Integer.toString(account.getSmtpPort()), account.getUsername(), account.getPassword());
+    }
+
+    public Integer getFolderMessageCount(Account account, String folder) {
+        if(!account.isValid() || !this.isFolderSupported(folder)){
+            return null;
+        }
+
+        Integer messageCount = 0;
+
+        try {
+            FolderConnection folderConnection = this.connectToFolder(
+                folder, 
+                account.getSmtpAdress(), 
+                Integer.toString(account.getSmtpPort()), 
+                account.getUsername(), 
+                account.getPassword()
+            );
+
+            Folder emailFolder = folderConnection.getFolder();
+            Store store = folderConnection.getStore();
+
+            messageCount = emailFolder.getMessageCount();
+
+            emailFolder.close(false);
+            store.close();
+
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return messageCount;
+    }
+
+    public Boolean syncFolder(com.example.mail.model.Folder folder){
+        //Sync folder logika:
+
+        //u folderu belezis broj poruka
+
+        //dohvatis i poruke i broj poruka - snimis u bazu sve poruke i zabelezis count na folder
+
+        //snimi u bazu i indeksiraj kroz es
+
+        return true;
     }
 }
