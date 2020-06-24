@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.mail.service.ContactIndexService;
 import com.example.mail.service.FileUploadService;
 
 @RestController
@@ -24,6 +25,9 @@ public class ContactController {
 
     @Autowired
     private ContactRepository contactRepository;
+
+    @Autowired
+    private ContactIndexService contactIndexService;
 
     @Autowired
     private PhotoRepository photoRepository;
@@ -45,8 +49,12 @@ public class ContactController {
 
     @GetMapping("/users/{userId}/contacts")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<Contact> getUserContacts(Long userId) {
-        return contactRepository.findByUserId(userId);
+    public List<Contact> getUserContacts(Long userId, @RequestParam("query") String query) {
+        if(query == null) {
+            return contactRepository.findByUserId(userId);
+        }
+
+        return contactIndexService.search(query, userId);
     }
 
     @PostMapping("/contacts")
@@ -55,7 +63,8 @@ public class ContactController {
             throws IOException {
         Contact contact = modelMapper.map(contactRequest, Contact.class);
         contact.setUser(userRepository.findById(currentUser.getId()).get());
-        contactRepository.save(contact);
+        Contact savedContact = contactRepository.save(contact);          
+        contactIndexService.upsert(savedContact);
 
         if(contactRequest.getPhoto() != null) {
             String savedImagePath = fileUploadService.uploadImage(contactRequest.getPhoto().getBytes());
@@ -68,16 +77,17 @@ public class ContactController {
             contact.getPhotos().add(photo);
         }
 
-        return contact;
+        return savedContact;
     }
 
     @DeleteMapping("/contacts/{contactId}")
     @PreAuthorize("hasRole('USER')")
-    public void delete(@PathVariable("contactId") Long contactId) {    
+    public void delete(@PathVariable("contactId") String contactId) {    
         for (Photo photo : contactRepository.findById(contactId).get().getPhotos()) {
             fileUploadService.removeImage(photo.getPath());
         }
 
         contactRepository.deleteById(contactId);
+        contactIndexService.delete(contactId);
     }
 }

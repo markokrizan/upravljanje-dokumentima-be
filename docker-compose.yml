@@ -10,6 +10,7 @@ services:
   #   restart: always
   #   depends_on: 
   #     - db
+  #     - elasticsearch
   #   environment: 
   #     SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/mail-app?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false&allowPublicKeyRetrieval=true
   #     SPRING_DATASOURCE_USERNAME: root
@@ -19,6 +20,28 @@ services:
   #      - ./src/main/resources:/app/main/resources
   #   networks: 
   #    - backend
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: elasticsearch:7.6.2
+    environment: 
+      - cluster.name=mail-app-es-cluster-1
+      - node.name=mail-app-es-node-1
+      - node.master=true
+      - cluster.initial_master_nodes=mail-app-es-node-1
+      - discovery.seed_hosts=mail-app-es-node-1
+      - http.cors.enabled=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - backend  
+    ports:
+      - 9200:9200
 
   db:
     image: mysql:latest
@@ -37,6 +60,7 @@ services:
   
 volumes:
   db-data:
+  elasticsearch-data:
 
 networks:
   backend:

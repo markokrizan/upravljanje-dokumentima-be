@@ -14,7 +14,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.2.1.RELEASE</version>
+		<version>2.3.0.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
@@ -86,6 +86,20 @@
 			<artifactId>javax.mail</artifactId>
 			<version>1.6.2</version>
         </dependency>
+		
+		<!-- Supported version matrix: -->
+		<!-- https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/#preface.versions -->
+		<dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-elasticsearch</artifactId>
+			<version>4.0.0.RELEASE</version>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.validation</groupId>
+			<artifactId>validation-api</artifactId>
+			<version>2.0.0.Final</version>
+		</dependency>
 	</dependencies>
 
 	<build>

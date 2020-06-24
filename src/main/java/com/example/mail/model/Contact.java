@@ -6,12 +6,17 @@ import java.util.HashSet;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import org.hibernate.annotations.GenericGenerator;
+import org.springframework.data.elasticsearch.annotations.Document;
+
 @Entity
 @Table(name = "contacts")
+@Document(indexName="mail", type="contact")
 public class Contact {   
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Id 
+    @GeneratedValue(generator="system-uuid")
+    @GenericGenerator(name="system-uuid", strategy = "uuid")
+    private String id;
 
     @NotNull
     @Column(length = 255)
@@ -35,15 +40,16 @@ public class Contact {
     @OneToMany(mappedBy="contact", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Photo> photos =  new HashSet<>();
 
+    //So I should specify that nested field types as FieldType.Nested using @Field spring annotation
     @ManyToOne
     @JoinColumn(name="user_id", nullable=false)
     private User user;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

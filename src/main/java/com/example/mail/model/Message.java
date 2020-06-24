@@ -6,8 +6,11 @@ import java.util.Set;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import org.springframework.data.elasticsearch.annotations.Document;
+
 @Entity
 @Table(name = "messages")
+@Document(indexName="mail", type="message")
 public class Message {   
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
