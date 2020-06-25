@@ -55,11 +55,11 @@ public class ContactIndexService implements IndexService<Contact> {
             return null;
         }
 
-        Contact indexedContact = contactElasticRepository.findById(contact.getId().toString()).orElse(null);
+        Contact indexedContact = contactElasticRepository.findById(contact.getId()).orElse(null);
 
         if (contact.getId() != null && indexedContact != null) {
-            modelMapper.map(indexedContact, contact);
-            
+            modelMapper.map(contact, indexedContact);
+
             return contactElasticRepository.save(indexedContact);
         }
 
