@@ -21,8 +21,8 @@ public class UserController {
 
     @GetMapping("/users/me")
     @PreAuthorize("hasRole('USER')")
-    public Optional<User> getCurrentUser(@CurrentUser UserPrincipal currentUser) {
-        return userRepository.findById(currentUser.getId());
+    public User getCurrentUser(@CurrentUser UserPrincipal currentUser) {
+        return userRepository.findById(currentUser.getId()).orElse(null);
     }
 
     @GetMapping("/users/checkUsernameAvailability")

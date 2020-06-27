@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.Operator;
+import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.apache.lucene.search.join.ScoreMode;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,23 +32,18 @@ public class ContactIndexService implements IndexService<Contact> {
     @Autowired
     private ModelMapper modelMapper;
 
-    public List<Contact> search(String query, Long userId) {
-        List<Contact> contacts = search(query);
-
-        return contacts.stream().filter(contact -> contact.getUser().getId() == userId).collect(Collectors.toList());
-    }
-
     @Override
-    public List<Contact> search(String query) {
+    public List<Contact> search(String query, Long userId) {
         SearchHits<Contact> contactSearchResults = elasticsearchTemplate.search(
-            buildQuery(query), 
+            buildQuery(query, userId), 
             Contact.class, 
             IndexCoordinates.of("mail")
         );
 
         return contactSearchResults
+            .getSearchHits()
             .stream()
-            .map(contact -> modelMapper.map(contact, Contact.class))
+            .map(contact -> modelMapper.map(contact.getContent(), Contact.class))
             .collect(Collectors.toList());
     }
 
@@ -67,18 +65,28 @@ public class ContactIndexService implements IndexService<Contact> {
     }
 
     @Override
-    public void delete(String modelId) {
+    public void delete(Long modelId) {
         contactElasticRepository.deleteById(modelId);
     }
 
     @Override
-    public NativeSearchQuery buildQuery(String query) {
+    public NativeSearchQuery buildQuery(String query, Long userId) {
+        QueryBuilder contactUserQuery = QueryBuilders.nestedQuery(
+            "user", 
+            QueryBuilders.boolQuery()
+            .must(QueryBuilders.termQuery("user.id", userId)), 
+            ScoreMode.None
+        );
+
         return new NativeSearchQueryBuilder()
-            .withQuery(QueryBuilders.multiMatchQuery(query)
-                .field("firstName")
-                .field("lastName")
-                .field("note")
-                .type(MultiMatchQueryBuilder.Type.BEST_FIELDS))
+                .withQuery(QueryBuilders.multiMatchQuery(query)
+                    .field("firstName")
+                    .field("lastName")
+                    .field("note")
+                    .operator(Operator.OR)
+                    .fuzziness(Fuzziness.AUTO)
+                    .prefixLength(3)
+                ).withFilter(contactUserQuery)
             .build();
     }
 }

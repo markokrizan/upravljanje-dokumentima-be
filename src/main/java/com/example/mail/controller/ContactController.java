@@ -43,13 +43,17 @@ public class ContactController {
 
     @GetMapping("/contacts")
     @PreAuthorize("hasRole('USER')")
-    public List<Contact> getMyContacts(@CurrentUser UserPrincipal currentUser) {
-        return contactRepository.findByUserId(currentUser.getId());
+    public List<Contact> getMyContacts(@RequestParam(required = false) String query, @CurrentUser UserPrincipal currentUser) {
+        if(query == null) {
+            return contactRepository.findByUserId(currentUser.getId());
+        }
+
+        return contactIndexService.search(query, currentUser.getId());
     }
 
     @GetMapping("/users/{userId}/contacts")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<Contact> getUserContacts(Long userId, @RequestParam("query") String query) {
+    public List<Contact> getUserContacts(Long userId, @RequestParam(required = false) String query) {
         if(query == null) {
             return contactRepository.findByUserId(userId);
         }
@@ -82,7 +86,7 @@ public class ContactController {
 
     @DeleteMapping("/contacts/{contactId}")
     @PreAuthorize("hasRole('USER')")
-    public void delete(@PathVariable("contactId") String contactId) {    
+    public void delete(@PathVariable("contactId") Long contactId) {    
         for (Photo photo : contactRepository.findById(contactId).get().getPhotos()) {
             fileUploadService.removeImage(photo.getPath());
         }
