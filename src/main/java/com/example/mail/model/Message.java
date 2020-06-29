@@ -6,6 +6,8 @@ import java.util.Set;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import org.springframework.data.elasticsearch.annotations.Document;
 
 @Entity
@@ -41,10 +43,12 @@ public class Message {
 
     private Boolean read = false;
 
+    @JsonIgnoreProperties("messages")
     @ManyToOne
     @JoinColumn(name="folder_id", nullable=false)
     private Folder folder;
 
+    @JsonIgnoreProperties("folders")
     @ManyToOne
     @JoinColumn(name="account_id", nullable=false)
     private Account account;

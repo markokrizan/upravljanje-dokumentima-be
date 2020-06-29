@@ -6,6 +6,8 @@ import java.util.HashSet;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -13,36 +15,46 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 @Entity
 @Table(name = "contacts")
 @Document(indexName="mail", type="contact")
-public class Contact {   
+public class Contact {  
+
+    @Field
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Field
     @NotNull
     @Column(length = 255)
     private String firstName;
 
+    @Field
     @NotNull
     @Column(length = 255)
     private String lastName;
 
+    @Field
     @NotNull
     @Column(length = 255)
     private String displayName;
 
+    @Field
     @NotNull
     @Column(length = 255)
     private String email;
 
+    @Field
     @Lob
     private String note;
 
+    @JsonIgnoreProperties("contact")
     @OneToMany(mappedBy="contact", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Field(type = FieldType.Nested, includeInParent=false, ignoreFields = {"contact"})
     private Set<Photo> photos =  new HashSet<>();
 
+    @JsonIgnoreProperties("accounts")
     @ManyToOne
     @JoinColumn(name="user_id", nullable=false)
-    @Field(type = FieldType.Nested, includeInParent=true)
+    @Field(type = FieldType.Nested, includeInParent=true, ignoreFields = {"accounts"})
     private User user;
 
     public Long getId() {

@@ -2,6 +2,7 @@ package com.example.mail.model;
 
 import com.example.mail.model.audit.DateAudit;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -43,6 +44,7 @@ public class User extends DateAudit {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
+    @JsonIgnoreProperties("user")
     @OneToMany(fetch = FetchType.EAGER, mappedBy="user")
     private Set<Account> accounts;
 
