@@ -42,6 +42,7 @@ public class Folder {
 
     @JsonIgnoreProperties("folder")
     @OneToMany(mappedBy="folder", cascade = CascadeType.PERSIST)
+    @JsonIgnore
     private List<Message> messages;
 
     @JsonIgnoreProperties("folders")
