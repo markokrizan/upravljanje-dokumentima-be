@@ -5,7 +5,10 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Arrays;
 
@@ -23,6 +26,7 @@ import javax.transaction.Transactional;
 
 import com.example.mail.exception.AppException;
 import com.example.mail.model.Account;
+import com.example.mail.model.User;
 import com.example.mail.payload.FolderConnection;
 import com.example.mail.payload.FolderMessages;
 import com.example.mail.repository.FolderRepository;
@@ -241,7 +245,19 @@ public class MailService {
         folderRepository.save(folder);
 
         messageRepository.saveAll(folderMessages.getMessages());
-        messageIndexService.bulkIndex(folderMessages.getMessages());
+
+
+        List<com.example.mail.model.Message> messagesToIndex = folderMessages.getMessages()
+            .stream()
+            .map(message -> {
+                message.getFolder().setMessages(null);
+                message.getFolder().getAccount().setFolders(null);
+                message.getFolder().getAccount().setUser(null);
+
+                return message;
+            }).collect(Collectors.toList());
+
+        messageIndexService.bulkIndex(messagesToIndex);
 
         return folderMessages;
     }
@@ -261,8 +277,25 @@ public class MailService {
         folder.setMessageCount(folderMessages.getMessageCount());
         folderRepository.save(folder);
 
-        messageRepository.saveAll(folderMessages.getMessages());
-        messageIndexService.bulkIndex(folderMessages.getMessages());
+        //messageRepository.saveAll(folderMessages.getMessages());
+
+        /**
+         *  Jackson nor spring-data-elasticsearch annotation cannot ommit serialization of fields at model level - but should according to the docs
+         * 
+         *  This could be an issue with the current version - this is a filthy hack to solve infinite recursion
+         * 
+         *  */ 
+        List<com.example.mail.model.Message> messagesToIndex = folderMessages.getMessages()
+            .stream()
+            .map(message -> {
+                message.getFolder().setMessages(null);  
+                message.getFolder().getAccount().setFolders(null);
+                message.getFolder().getAccount().getUser().setAccounts(null);
+            
+                return message;
+            }).collect(Collectors.toList());
+
+        messageIndexService.bulkIndex(messagesToIndex);
 
         return folderMessages;
     }

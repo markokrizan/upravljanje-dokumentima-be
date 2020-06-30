@@ -46,7 +46,7 @@ public class User extends DateAudit {
 
     @JsonIgnoreProperties("user")
     @OneToMany(fetch = FetchType.EAGER, mappedBy="user")
-    private Set<Account> accounts;
+    private Set<Account> accounts = new HashSet<>();
 
     public User() {
 

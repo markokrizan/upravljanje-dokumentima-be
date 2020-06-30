@@ -40,6 +40,7 @@ public class Folder {
     @ManyToOne
     private Folder parentFolder;
 
+    @JsonIgnoreProperties("folder")
     @OneToMany(mappedBy="folder", cascade = CascadeType.PERSIST)
     private List<Message> messages;
 

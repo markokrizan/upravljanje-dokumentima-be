@@ -53,6 +53,15 @@ public class ContactIndexService implements IndexService<Contact> {
             return null;
         }
 
+
+        /**
+         *  Jackson nor spring-data-elasticsearch annotation cannot ommit serialization of fields at model level - but should according to the docs
+         * 
+         *  This could be an issue with the current version - this is a filthy hack to solve infinite recursion
+         * 
+         *  */ 
+        contact.getUser().setAccounts(null);
+
         Contact indexedContact = contactElasticRepository.findById(contact.getId()).orElse(null);
 
         if (contact.getId() != null && indexedContact != null) {

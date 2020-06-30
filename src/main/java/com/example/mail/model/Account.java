@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import javax.persistence.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "accounts")
@@ -43,6 +44,7 @@ public class Account {
     @JsonIgnore
     private User user;
 
+    @JsonIgnoreProperties("account")
     @OneToMany(mappedBy="account", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
     private Set<Folder> folders =  new HashSet<>();
 
