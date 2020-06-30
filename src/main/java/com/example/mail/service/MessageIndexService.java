@@ -54,12 +54,7 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
 
     @Override
     public NativeSearchQuery buildQuery(String query, Long folderId) {
-        QueryBuilder contactUserQuery = QueryBuilders.nestedQuery(
-            "user", 
-            QueryBuilders.boolQuery()
-            .must(QueryBuilders.termQuery("folderId", folderId)), 
-            ScoreMode.None
-        );
+        QueryBuilder messageFolderQuery = QueryBuilders.termQuery("folderId", folderId);
 
         return new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.multiMatchQuery(query)
@@ -70,7 +65,7 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
                     .operator(Operator.OR)
                     .fuzziness(Fuzziness.AUTO)
                     .prefixLength(3)
-                ).withFilter(contactUserQuery)
+                ).withFilter(messageFolderQuery)
             .build();
     }
 

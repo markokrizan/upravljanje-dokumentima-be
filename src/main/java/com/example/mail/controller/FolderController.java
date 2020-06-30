@@ -1,5 +1,6 @@
 package com.example.mail.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -13,6 +14,7 @@ import com.example.mail.repository.MessageRepository;
 import com.example.mail.security.CurrentUser;
 import com.example.mail.security.UserPrincipal;
 import com.example.mail.service.MailService;
+import com.example.mail.service.MessageIndexService;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +42,9 @@ public class FolderController {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private MessageIndexService messageIndexService;
 
     @GetMapping("/accounts/{accountId}/folders")
     @PreAuthorize("hasRole('USER')")
@@ -70,12 +75,6 @@ public class FolderController {
         return folderRepository.findByAccountId(accountId); 
     }
 
-    @GetMapping("/accounts/{accountId}/folders/{folderId}/messages")
-    @PreAuthorize("hasRole('USER')")
-    public List<Message> getFolderMessages(@PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId) {    
-        return messageRepository.findByFolderId(folderId);
-    }
-
     @PutMapping("/accounts/{accountId}/folders/{folderId}/sync")
     @PreAuthorize("hasRole('USER')")
     public FolderMessages syncFolder(@CurrentUser UserPrincipal currentUser, @PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId)
@@ -84,5 +83,23 @@ public class FolderController {
         Folder folder = folderRepository.findById(folderId).get();
        
         return mailService.syncFolderMessages(folder);
+    }
+
+    @GetMapping("/accounts/{accountId}/folders/{folderId}/messages")
+    @PreAuthorize("hasRole('USER')")
+    public FolderMessages getFolderMessages(@CurrentUser UserPrincipal currentUser, @PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId, @RequestParam(required = false) String query) {
+        FolderMessages folderMessages = new FolderMessages();
+        List<Message> messages = new ArrayList<>();
+
+        if(query == null) {
+            messages = messageRepository.findByFolderId(folderId);
+        } else {
+            messages = messageIndexService.search(query, folderId);
+        }
+
+        folderMessages.setMessages(messages);
+        folderMessages.setMessageCount(messages.size());
+
+        return folderMessages;
     }
 }

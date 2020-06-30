@@ -76,12 +76,7 @@ public class ContactIndexService implements IndexService<IndexableContact, Conta
 
     @Override
     public NativeSearchQuery buildQuery(String query, Long userId) {
-        QueryBuilder contactUserQuery = QueryBuilders.nestedQuery(
-            "user", 
-            QueryBuilders.boolQuery()
-            .must(QueryBuilders.termQuery("userId", userId)), 
-            ScoreMode.None
-        );
+        QueryBuilder contactUserQuery = QueryBuilders.termQuery("userId", userId);
 
         return new NativeSearchQueryBuilder()
                 .withQuery(QueryBuilders.multiMatchQuery(query)
