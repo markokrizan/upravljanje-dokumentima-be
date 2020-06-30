@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 
 import com.example.mail.elastic.MessageElasticRepository;
 import com.example.mail.model.Message;
+import com.example.mail.payload.index.IndexableMessage;
+import com.example.mail.payload.mappers.IndexableMessageMapper;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +23,7 @@ import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.common.unit.Fuzziness;
 
 @Service
-public class MessageIndexService implements IndexService<Message> {
+public class MessageIndexService implements IndexService<IndexableMessage, Message> {
 
     @Autowired
     private ElasticsearchRestTemplate elasticsearchTemplate;
@@ -32,27 +34,30 @@ public class MessageIndexService implements IndexService<Message> {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private IndexableMessageMapper indexableModelMapper;
+
     @Override
-    public List<Message> search(String query, Long userId) {
-        SearchHits<Message> messageSearchResults = elasticsearchTemplate.search(
-            buildQuery(query, userId), 
-            Message.class, 
+    public List<Message> search(String query, Long folderId) {
+        SearchHits<IndexableMessage> messageSearchResults = elasticsearchTemplate.search(
+            buildQuery(query, folderId), 
+            IndexableMessage.class, 
             IndexCoordinates.of("messages")
         );
 
         return messageSearchResults
             .getSearchHits()
             .stream()
-            .map(contact -> modelMapper.map(contact.getContent(), Message.class))
+            .map(contact -> indexableModelMapper.convertFromIndexable(contact.getContent()))
             .collect(Collectors.toList());
     }
 
     @Override
-    public NativeSearchQuery buildQuery(String query, Long userId) {
+    public NativeSearchQuery buildQuery(String query, Long folderId) {
         QueryBuilder contactUserQuery = QueryBuilders.nestedQuery(
             "user", 
             QueryBuilders.boolQuery()
-            .must(QueryBuilders.termQuery("account.user.id", userId)), 
+            .must(QueryBuilders.termQuery("folderId", folderId)), 
             ScoreMode.None
         );
 
@@ -70,12 +75,12 @@ public class MessageIndexService implements IndexService<Message> {
     }
 
     @Override
-    public Message upsert(Message message) {
+    public IndexableMessage upsert(Message message) {
         if (message == null) {
             return null;
         }
 
-        Message indexedMessage = messageElasticRepository.findById(message.getId()).orElse(null);
+        IndexableMessage indexedMessage = messageElasticRepository.findById(message.getId()).orElse(null);
 
         if (message.getId() != null && indexedMessage != null) {
             modelMapper.map(message, indexedMessage);
@@ -83,7 +88,7 @@ public class MessageIndexService implements IndexService<Message> {
             return messageElasticRepository.save(indexedMessage);
         }
 
-        return messageElasticRepository.save(message);
+        return messageElasticRepository.save(indexableModelMapper.convertToIndexable(message));
     }
 
     @Override
@@ -92,7 +97,7 @@ public class MessageIndexService implements IndexService<Message> {
     }
 
     @Override
-    public void bulkIndex(List<Message> messages) {
+    public void bulkIndex(List<IndexableMessage> messages) {
         messageElasticRepository.saveAll(messages);
     }
 }

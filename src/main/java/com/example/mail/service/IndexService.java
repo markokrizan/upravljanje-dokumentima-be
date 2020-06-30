@@ -4,10 +4,10 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 
 import java.util.List;
 
-public interface IndexService<T> {
-    public List<T> search(String query, Long userId);
-    public NativeSearchQuery buildQuery(String query, Long userId);
-    public T upsert(T model);
+public interface IndexService<IndexableType, MainModelType> {
+    public List<MainModelType> search(String query, Long ownerId);
+    public NativeSearchQuery buildQuery(String query, Long ownerId);
+    public IndexableType upsert(MainModelType model);
     public void delete(Long modelId);
-    public void bulkIndex(List<T> models);
+    public void bulkIndex(List<IndexableType> models);
 }

@@ -18,10 +18,12 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.stereotype.Service;
 
 import com.example.mail.model.Contact;
+import com.example.mail.payload.index.IndexableContact;
+import com.example.mail.payload.mappers.IndexableContactMapper;
 import com.example.mail.elastic.ContactElasticRepository;
 
 @Service
-public class ContactIndexService implements IndexService<Contact> {
+public class ContactIndexService implements IndexService<IndexableContact, Contact> {
 
     @Autowired
     private ElasticsearchRestTemplate elasticsearchTemplate;
@@ -32,37 +34,31 @@ public class ContactIndexService implements IndexService<Contact> {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private IndexableContactMapper indexableModelMapper;
+
     @Override
     public List<Contact> search(String query, Long userId) {
-        SearchHits<Contact> contactSearchResults = elasticsearchTemplate.search(
+        SearchHits<IndexableContact> contactSearchResults = elasticsearchTemplate.search(
             buildQuery(query, userId), 
-            Contact.class, 
+            IndexableContact.class, 
             IndexCoordinates.of("contacts")
         );
 
         return contactSearchResults
             .getSearchHits()
             .stream()
-            .map(contact -> modelMapper.map(contact.getContent(), Contact.class))
+            .map(contact -> indexableModelMapper.convertFromIndexable(contact.getContent()))
             .collect(Collectors.toList());
     }
 
     @Override
-    public Contact upsert(Contact contact) {
+    public IndexableContact upsert(Contact contact) {
         if (contact == null) {
             return null;
         }
 
-
-        /**
-         *  Jackson nor spring-data-elasticsearch annotation cannot ommit serialization of fields at model level - but should according to the docs
-         * 
-         *  This could be an issue with the current version - this is a filthy hack to solve infinite recursion
-         * 
-         *  */ 
-        contact.getUser().setAccounts(null);
-
-        Contact indexedContact = contactElasticRepository.findById(contact.getId()).orElse(null);
+        IndexableContact indexedContact = contactElasticRepository.findById(contact.getId()).orElse(null);
 
         if (contact.getId() != null && indexedContact != null) {
             modelMapper.map(contact, indexedContact);
@@ -70,7 +66,7 @@ public class ContactIndexService implements IndexService<Contact> {
             return contactElasticRepository.save(indexedContact);
         }
 
-        return contactElasticRepository.save(contact);
+        return contactElasticRepository.save(indexableModelMapper.convertToIndexable(contact));
     }
 
     @Override
@@ -83,7 +79,7 @@ public class ContactIndexService implements IndexService<Contact> {
         QueryBuilder contactUserQuery = QueryBuilders.nestedQuery(
             "user", 
             QueryBuilders.boolQuery()
-            .must(QueryBuilders.termQuery("user.id", userId)), 
+            .must(QueryBuilders.termQuery("userId", userId)), 
             ScoreMode.None
         );
 
@@ -100,7 +96,7 @@ public class ContactIndexService implements IndexService<Contact> {
     }
 
     @Override
-    public void bulkIndex(List<Contact> contacts) {
+    public void bulkIndex(List<IndexableContact> contacts) {
         contactElasticRepository.saveAll(contacts);
     }
 }

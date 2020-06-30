@@ -1,49 +1,36 @@
-package com.example.mail.model;
+package com.example.mail.payload.index;
 
-import java.util.Set;
 import java.util.HashSet;
-
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Set;
+import javax.persistence.Id;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@Entity
-@Table(name = "contacts")
-public class Contact {   
+import com.example.mail.model.Photo;
+
+@Document(indexName = "contacts")
+public class IndexableContact {
+    
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Column(length = 255)
     private String firstName;
 
-    @NotNull
-    @Column(length = 255)
     private String lastName;
 
-    @NotNull
-    @Column(length = 255)
     private String displayName;
 
-    @NotNull
-    @Column(length = 255)
     private String email;
 
-    @Lob
     private String note;
 
     @JsonIgnoreProperties("contact")
-    @OneToMany(mappedBy="contact", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
+    @Field(type = FieldType.Nested, includeInParent=false, ignoreFields = {"contact"})
     private Set<Photo> photos =  new HashSet<>();
 
-    @JsonIgnoreProperties("accounts")
-    @ManyToOne
-    @JoinColumn(name="user_id", nullable=false)
-    @JsonIgnore
-    private User user;
+    private Long userId;
 
     public Long getId() {
         return id;
@@ -101,11 +88,11 @@ public class Contact {
         this.photos = photos;
     }
 
-    public User getUser() {
-        return user;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser(User user) {
-        this.user = user;
-    }    
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
 }

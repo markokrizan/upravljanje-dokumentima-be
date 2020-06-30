@@ -9,11 +9,9 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import org.springframework.data.elasticsearch.annotations.Document;
 
 @Entity
 @Table(name = "messages")
-@Document(indexName="messages")
 public class Message {   
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
