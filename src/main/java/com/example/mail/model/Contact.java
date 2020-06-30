@@ -6,6 +6,7 @@ import java.util.HashSet;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import org.springframework.data.elasticsearch.annotations.Document;
@@ -14,35 +15,28 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 
 @Entity
 @Table(name = "contacts")
-@Document(indexName="mail", type="contact")
-public class Contact {  
-
-    @Field
+@Document(indexName="contacts")
+public class Contact {   
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Field
     @NotNull
     @Column(length = 255)
     private String firstName;
 
-    @Field
     @NotNull
     @Column(length = 255)
     private String lastName;
 
-    @Field
     @NotNull
     @Column(length = 255)
     private String displayName;
 
-    @Field
     @NotNull
     @Column(length = 255)
     private String email;
 
-    @Field
     @Lob
     private String note;
 
@@ -54,6 +48,7 @@ public class Contact {
     @JsonIgnoreProperties("accounts")
     @ManyToOne
     @JoinColumn(name="user_id", nullable=false)
+    @JsonIgnore
     @Field(type = FieldType.Nested, includeInParent=true, ignoreFields = {"accounts"})
     private User user;
 

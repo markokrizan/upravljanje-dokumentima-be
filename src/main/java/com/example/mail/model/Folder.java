@@ -1,12 +1,30 @@
 package com.example.mail.model;
 
 import javax.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 @Entity
 @Table(name = "folders")
 public class Folder {
+
+    @Transient
+    @JsonIgnore
+    public final String FOLDER_INBOX = "INBOX";
+
+    @Transient
+    @JsonIgnore
+    public final String FOLDER_SENT = "SENT";
+
+    @Transient
+    @JsonIgnore
+    public final String[] SUPPORTED_FOLDERS = { FOLDER_INBOX, FOLDER_SENT };
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,8 +40,8 @@ public class Folder {
     @ManyToOne
     private Folder parentFolder;
 
-    @OneToMany(mappedBy="folder")
-    private Set<Message> messages;
+    @OneToMany(mappedBy="folder", cascade = CascadeType.PERSIST)
+    private List<Message> messages;
 
     @JsonIgnoreProperties("folders")
     @ManyToOne
@@ -31,6 +49,9 @@ public class Folder {
     private Account account;
 
     private Integer messageCount = 0;
+
+    @Transient
+    private Boolean isSupported;
 
     public Long getId() {
         return id;
@@ -64,11 +85,11 @@ public class Folder {
         this.parentFolder = parentFolder;
     }
 
-    public Set<Message> getMessages() {
+    public List<Message> getMessages() {
         return messages;
     }
 
-    public void setMessages(Set<Message> messages) {
+    public void setMessages(List<Message> messages) {
         this.messages = messages;
     }
 
@@ -86,5 +107,19 @@ public class Folder {
 
     public void setMessageCount(Integer messageCount) {
         this.messageCount = messageCount;
+    }
+
+    public Boolean getIsSupported() {
+        List<String> supportedFolders = Arrays.asList(SUPPORTED_FOLDERS);
+
+        if(!supportedFolders.contains(getName().toUpperCase())) {
+            return false;
+        }
+
+       return true;
+    }
+
+    public void setIsSupported(Boolean isSupported) {
+        this.isSupported = isSupported;
     }
 }

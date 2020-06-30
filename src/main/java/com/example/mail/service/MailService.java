@@ -1,7 +1,7 @@
 package com.example.mail.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,14 +13,20 @@ import javax.mail.Address;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.NoSuchProviderException;
+import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.Flags.Flag;
+import javax.transaction.Transactional;
 
+import com.example.mail.exception.AppException;
 import com.example.mail.model.Account;
 import com.example.mail.payload.FolderConnection;
 import com.example.mail.payload.FolderMessages;
+import com.example.mail.repository.FolderRepository;
+import com.example.mail.repository.MessageRepository;
 
 @Service
 public class MailService {
@@ -32,6 +38,15 @@ public class MailService {
     public final String[] SUPPORTED_FOLDERS = { FOLDER_INBOX, FOLDER_SENT };
 
     private final String DEFAULT_SESSION_PROTOCOL = "pop3s";
+
+    @Autowired
+    FolderRepository folderRepository;
+
+    @Autowired
+    MessageRepository messageRepository;
+
+    @Autowired
+    MessageIndexService messageIndexService;
 
     public Session initSession(String host, String port, Boolean enableTtls) {
         Properties properties = new Properties();
@@ -57,12 +72,12 @@ public class MailService {
         return new FolderConnection(emailFolder, store);
     }
 
-    public FolderMessages getFolderMessages(String folder, String host, String port, String user, String password) {
+    public FolderMessages getFolderMessages(com.example.mail.model.Folder folder, String host, String port, String user, String password) {
         ArrayList<com.example.mail.model.Message> parsedMessages = new ArrayList<>();
         Integer totalMessages = 0;
 
         try {
-            FolderConnection folderConnection = this.connectToFolder(folder, host, port, user, password);
+            FolderConnection folderConnection = this.connectToFolder(folder.getName(), host, port, user, password);
 
             Folder emailFolder = folderConnection.getFolder();
             Store store = folderConnection.getStore();
@@ -72,7 +87,7 @@ public class MailService {
             Message[] messages = emailFolder.getMessages(totalMessages - MAX_MESSAGES, totalMessages);
            
             for(Message message : messages) {
-                parsedMessages.add(parseMessage(message));
+                parsedMessages.add(parseMessage(message, folder));
             }
 
             emailFolder.close(false);
@@ -96,8 +111,35 @@ public class MailService {
 
         return null;
     }
+        
+    public String getMessageContent(Message message) throws MessagingException {
+        try {
+            Object content = message.getContent();
 
-    public com.example.mail.model.Message parseMessage(Message message) throws MessagingException, IOException {
+            if (content instanceof Multipart) {
+                StringBuffer messageContent = new StringBuffer();
+                Multipart multipart = (Multipart) content;
+
+                for (int i = 0; i < multipart.getCount(); i++) {
+                    Part part = multipart.getBodyPart(i);
+
+                    if (part.isMimeType("text/plain")) {
+                        messageContent.append(part.getContent().toString());
+                    }
+                }
+                return messageContent.toString();
+            }
+
+            return content.toString();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return "";
+    }
+
+    public com.example.mail.model.Message parseMessage(Message message, com.example.mail.model.Folder folder) throws MessagingException, IOException {
         com.example.mail.model.Message modelMessage = new com.example.mail.model.Message();
 
         Address[] fromAdresses = message.getFrom();
@@ -106,9 +148,8 @@ public class MailService {
         Address[] bccAdresses = message.getRecipients(Message.RecipientType.BCC);
         Date date = message.getReceivedDate();
         String subject = message.getSubject();
-        String content = message.getContent().toString();
         Boolean isRead = message.isSet(Flag.SEEN);
-
+        String content = getMessageContent(message);
         modelMessage.setFrom(getFirstAdress(fromAdresses));
         modelMessage.setTo(getFirstAdress(toAdresses));
         modelMessage.setCc(getFirstAdress(ccAdresses));
@@ -117,6 +158,9 @@ public class MailService {
         modelMessage.setSubject(subject);
         modelMessage.setContent(content);
         modelMessage.setRead(isRead);
+
+        modelMessage.setAccount(folder.getAccount());
+        modelMessage.setFolder(folder);
 
         return modelMessage;
     }
@@ -131,8 +175,10 @@ public class MailService {
         return true;
     }
 
-    public FolderMessages getMessages(Account account, String folder){
-        if(!account.isValid()){
+    public FolderMessages getMessages(com.example.mail.model.Folder folder){
+        Account account = folder.getAccount();
+        
+        if(account == null || !account.isValid()){
             return null;
         }
 
@@ -174,15 +220,50 @@ public class MailService {
         return messageCount;
     }
 
-    public Boolean syncFolder(com.example.mail.model.Folder folder){
-        //Sync folder logika:
+    public FolderMessages mockSyncFolderMessages(com.example.mail.model.Folder folder) {
+        com.example.mail.model.Message modelMessage1 = new com.example.mail.model.Message();
+        modelMessage1.setSubject("subject 1");
+        modelMessage1.setFolder(folder);
+        modelMessage1.setAccount(folder.getAccount());
 
-        //u folderu belezis broj poruka
+        com.example.mail.model.Message modelMessage2 = new com.example.mail.model.Message();
+        modelMessage2.setSubject("subject 1");
+        modelMessage2.setFolder(folder);
+        modelMessage2.setAccount(folder.getAccount());
 
-        //dohvatis i poruke i broj poruka - snimis u bazu sve poruke i zabelezis count na folder
+        ArrayList<com.example.mail.model.Message> messages = new ArrayList<>();
+        messages.add(modelMessage1);
+        messages.add(modelMessage2);
 
-        //snimi u bazu i indeksiraj kroz es
+        FolderMessages folderMessages = new FolderMessages(2, messages);
 
-        return true;
+        folder.setMessageCount(folderMessages.getMessageCount());
+        folderRepository.save(folder);
+
+        messageRepository.saveAll(folderMessages.getMessages());
+        messageIndexService.bulkIndex(folderMessages.getMessages());
+
+        return folderMessages;
+    }
+
+    @Transactional
+    public FolderMessages syncFolderMessages(com.example.mail.model.Folder folder){
+        if(!isFolderSupported(folder.getName())){
+            throw new AppException("Looking for an unsupported folder, supported folders: " + String.join(", ", folder.SUPPORTED_FOLDERS));
+        }
+
+        if(folder.getMessageCount() >= getFolderMessageCount(folder.getAccount(), folder.getName())){
+            throw new AppException("Folder already in sync!");
+        }
+
+        FolderMessages folderMessages = getMessages(folder);
+
+        folder.setMessageCount(folderMessages.getMessageCount());
+        folderRepository.save(folder);
+
+        messageRepository.saveAll(folderMessages.getMessages());
+        messageIndexService.bulkIndex(folderMessages.getMessages());
+
+        return folderMessages;
     }
 }

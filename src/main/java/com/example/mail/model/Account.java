@@ -1,7 +1,9 @@
 package com.example.mail.model;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.persistence.*;
 
@@ -146,5 +148,14 @@ public class Account {
         }
 
         return true;
+    }
+
+    public Folder containsFolder(String folderName) {
+        List<Folder> folders = this.getFolders()
+            .stream()
+            .filter(folder -> folder.getName().toLowerCase() == folderName.toLowerCase())
+            .collect(Collectors.toList());
+
+        return folders.get(0);
     }
 }

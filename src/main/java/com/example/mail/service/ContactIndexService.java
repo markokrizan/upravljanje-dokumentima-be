@@ -37,7 +37,7 @@ public class ContactIndexService implements IndexService<Contact> {
         SearchHits<Contact> contactSearchResults = elasticsearchTemplate.search(
             buildQuery(query, userId), 
             Contact.class, 
-            IndexCoordinates.of("mail")
+            IndexCoordinates.of("contacts")
         );
 
         return contactSearchResults
@@ -88,5 +88,10 @@ public class ContactIndexService implements IndexService<Contact> {
                     .prefixLength(3)
                 ).withFilter(contactUserQuery)
             .build();
+    }
+
+    @Override
+    public void bulkIndex(List<Contact> contacts) {
+        contactElasticRepository.saveAll(contacts);
     }
 }

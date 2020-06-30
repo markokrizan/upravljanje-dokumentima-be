@@ -12,7 +12,7 @@ import org.springframework.data.elasticsearch.annotations.Document;
 
 @Entity
 @Table(name = "messages")
-@Document(indexName="mail", type="message")
+@Document(indexName="messages")
 public class Message {   
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,6 +56,7 @@ public class Message {
     @ManyToMany
     Set<Tag> tags;
 
+    @JsonIgnoreProperties("message")
     @OneToMany(mappedBy="message")
     private Set<Attachment> attachments;
 
