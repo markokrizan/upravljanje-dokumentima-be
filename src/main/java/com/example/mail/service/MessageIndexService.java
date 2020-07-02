@@ -38,14 +38,10 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
     @Autowired
     private IndexableMessageMapper indexableModelMapper;
 
-    private final Integer DEFAULT_PER_PAGE = 10;
-
-    private Pageable defaultPaging = PageRequest.of(0, DEFAULT_PER_PAGE);
-
     @Override
     public List<Message> search(String query, Long folderId, Pageable pageable) {
         SearchHits<IndexableMessage> messageSearchResults = elasticsearchTemplate.search(
-            buildQuery(query, folderId, pageable != null ? pageable : defaultPaging), 
+            buildQuery(query, folderId, pageable != null ? pageable : Message.defaultPaging), 
             IndexableMessage.class, 
             IndexCoordinates.of("messages")
         );

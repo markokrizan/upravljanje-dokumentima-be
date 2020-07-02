@@ -38,14 +38,10 @@ public class ContactIndexService implements IndexService<IndexableContact, Conta
     @Autowired
     private IndexableContactMapper indexableModelMapper;
 
-    private final Integer DEFAULT_PER_PAGE = 10;
-
-    private Pageable defaultPaging = PageRequest.of(0, DEFAULT_PER_PAGE);
-
     @Override
     public List<Contact> search(String query, Long userId, Pageable pageable) {
         SearchHits<IndexableContact> contactSearchResults = elasticsearchTemplate.search(
-            buildQuery(query, userId, pageable != null ? pageable : defaultPaging), 
+            buildQuery(query, userId, pageable != null ? pageable : Contact.defaultPaging), 
             IndexableContact.class, 
             IndexCoordinates.of("contacts")
         );
