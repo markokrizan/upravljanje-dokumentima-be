@@ -34,14 +34,14 @@ public class Folder {
     private String name;
 
     @JsonIgnoreProperties("parentFolder")
-    @OneToMany(mappedBy="parentFolder")
+    @OneToMany(mappedBy="parentFolder", cascade = CascadeType.REMOVE)
     private Set<Folder> subFolders;
 
     @ManyToOne
     private Folder parentFolder;
 
     @JsonIgnoreProperties("folder")
-    @OneToMany(mappedBy="folder", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy="folder", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Message> messages;
 
@@ -54,6 +54,8 @@ public class Folder {
 
     @Transient
     private Boolean isSupported;
+
+    private Boolean isSynced;
 
     public Long getId() {
         return id;
@@ -123,5 +125,13 @@ public class Folder {
 
     public void setIsSupported(Boolean isSupported) {
         this.isSupported = isSupported;
+    }
+
+    public Boolean getIsSynced() {
+        return isSynced;
+    }
+
+    public void setIsSynced(Boolean isSynced) {
+        this.isSynced = isSynced;
     }
 }

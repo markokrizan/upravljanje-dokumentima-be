@@ -9,9 +9,15 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 @Entity
 @Table(name = "contacts")
 public class Contact {   
+    public static final Integer DEFAULT_PER_PAGE = 10;
+    public static Pageable defaultPaging = PageRequest.of(0, DEFAULT_PER_PAGE);
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

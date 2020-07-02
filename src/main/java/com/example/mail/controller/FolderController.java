@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import com.example.mail.elastic.MessageElasticRepository;
 import com.example.mail.exception.BadRequestException;
 import com.example.mail.model.Folder;
 import com.example.mail.model.Message;
@@ -36,6 +37,9 @@ public class FolderController {
 
     @Autowired
     private MessageRepository messageRepository;
+
+    @Autowired
+    private MessageElasticRepository messageElasticRepository;
 
     @Autowired
     private MailService mailService;
@@ -71,6 +75,7 @@ public class FolderController {
     @PreAuthorize("hasRole('USER')")
     public List<Folder> delete(@PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId) {    
         folderRepository.deleteById(folderId);
+        messageElasticRepository.deleteByFolderId(folderId);
 
         return folderRepository.findByAccountId(accountId); 
     }
@@ -92,9 +97,9 @@ public class FolderController {
         List<Message> messages = new ArrayList<>();
 
         if(query == null) {
-            messages = messageRepository.findByFolderId(folderId);
+            messages = messageRepository.findByFolderId(folderId, Message.defaultPaging).getContent();
         } else {
-            messages = messageIndexService.search(query, folderId);
+            messages = messageIndexService.search(query, folderId, Message.defaultPaging);
         }
 
         folderMessages.setMessages(messages);

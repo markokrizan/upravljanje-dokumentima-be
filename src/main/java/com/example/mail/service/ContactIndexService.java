@@ -3,12 +3,13 @@ package com.example.mail.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.apache.lucene.search.join.ScoreMode;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,10 +38,14 @@ public class ContactIndexService implements IndexService<IndexableContact, Conta
     @Autowired
     private IndexableContactMapper indexableModelMapper;
 
+    private final Integer DEFAULT_PER_PAGE = 10;
+
+    private Pageable defaultPaging = PageRequest.of(0, DEFAULT_PER_PAGE);
+
     @Override
-    public List<Contact> search(String query, Long userId) {
+    public List<Contact> search(String query, Long userId, Pageable pageable) {
         SearchHits<IndexableContact> contactSearchResults = elasticsearchTemplate.search(
-            buildQuery(query, userId), 
+            buildQuery(query, userId, pageable != null ? pageable : defaultPaging), 
             IndexableContact.class, 
             IndexCoordinates.of("contacts")
         );
@@ -75,7 +80,7 @@ public class ContactIndexService implements IndexService<IndexableContact, Conta
     }
 
     @Override
-    public NativeSearchQuery buildQuery(String query, Long userId) {
+    public NativeSearchQuery buildQuery(String query, Long userId, Pageable pageable) {
         QueryBuilder contactUserQuery = QueryBuilders.termQuery("userId", userId);
 
         return new NativeSearchQueryBuilder()
@@ -87,6 +92,7 @@ public class ContactIndexService implements IndexService<IndexableContact, Conta
                     .fuzziness(Fuzziness.AUTO)
                     .prefixLength(3)
                 ).withFilter(contactUserQuery)
+                .withPageable(pageable)
             .build();
     }
 

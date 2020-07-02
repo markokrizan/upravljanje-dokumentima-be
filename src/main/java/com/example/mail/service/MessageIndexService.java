@@ -10,12 +10,13 @@ import com.example.mail.payload.mappers.IndexableMessageMapper;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
-import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -37,10 +38,14 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
     @Autowired
     private IndexableMessageMapper indexableModelMapper;
 
+    private final Integer DEFAULT_PER_PAGE = 10;
+
+    private Pageable defaultPaging = PageRequest.of(0, DEFAULT_PER_PAGE);
+
     @Override
-    public List<Message> search(String query, Long folderId) {
+    public List<Message> search(String query, Long folderId, Pageable pageable) {
         SearchHits<IndexableMessage> messageSearchResults = elasticsearchTemplate.search(
-            buildQuery(query, folderId), 
+            buildQuery(query, folderId, pageable != null ? pageable : defaultPaging), 
             IndexableMessage.class, 
             IndexCoordinates.of("messages")
         );
@@ -53,7 +58,7 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
     }
 
     @Override
-    public NativeSearchQuery buildQuery(String query, Long folderId) {
+    public NativeSearchQuery buildQuery(String query, Long folderId, Pageable pageable) {
         QueryBuilder messageFolderQuery = QueryBuilders.termQuery("folderId", folderId);
 
         return new NativeSearchQueryBuilder()
@@ -66,6 +71,7 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
                     .fuzziness(Fuzziness.AUTO)
                     .prefixLength(3)
                 ).withFilter(messageFolderQuery)
+                .withPageable(pageable)
             .build();
     }
 

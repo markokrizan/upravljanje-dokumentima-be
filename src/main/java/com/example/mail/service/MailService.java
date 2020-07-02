@@ -15,13 +15,15 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.NoSuchProviderException;
+import javax.mail.AuthenticationFailedException;
+import javax.mail.FolderNotFoundException;
 import javax.mail.Part;
 import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.Flags.Flag;
 import javax.transaction.Transactional;
 
-import com.example.mail.exception.AppException;
+import com.example.mail.exception.BadRequestException;
 import com.example.mail.model.Account;
 import com.example.mail.payload.FolderConnection;
 import com.example.mail.payload.FolderMessages;
@@ -97,6 +99,10 @@ public class MailService {
             emailFolder.close(false);
             store.close();
 
+        } catch (AuthenticationFailedException e) {
+            throw new BadRequestException("Bad email account credentials - please check your configuration!");
+        } catch (FolderNotFoundException e) {
+            throw new BadRequestException("Folder not found! - " + e.getMessage());
         } catch (NoSuchProviderException e) {
             e.printStackTrace();
         } catch (MessagingException e) {
@@ -224,49 +230,26 @@ public class MailService {
         return messageCount;
     }
 
-    public FolderMessages mockSyncFolderMessages(com.example.mail.model.Folder folder) {
-        com.example.mail.model.Message modelMessage1 = new com.example.mail.model.Message();
-        modelMessage1.setSubject("subject 1");
-        modelMessage1.setFolder(folder);
-        modelMessage1.setAccount(folder.getAccount());
-
-        com.example.mail.model.Message modelMessage2 = new com.example.mail.model.Message();
-        modelMessage2.setSubject("subject 1");
-        modelMessage2.setFolder(folder);
-        modelMessage2.setAccount(folder.getAccount());
-
-        ArrayList<com.example.mail.model.Message> messages = new ArrayList<>();
-        messages.add(modelMessage1);
-        messages.add(modelMessage2);
-
-        FolderMessages folderMessages = new FolderMessages(2, messages);
-
-        folder.setMessageCount(folderMessages.getMessageCount());
-        folderRepository.save(folder);
-
-        messageRepository.saveAll(folderMessages.getMessages());
-        messageIndexService.bulkIndex(indexableMapper.convertToIndexables(folderMessages.getMessages()));
-
-        return folderMessages;
-    }
-
     @Transactional
     public FolderMessages syncFolderMessages(com.example.mail.model.Folder folder){
         if(!isFolderSupported(folder.getName())){
-            throw new AppException("Looking for an unsupported folder, supported folders: " + String.join(", ", folder.SUPPORTED_FOLDERS));
+            throw new BadRequestException("Looking for an unsupported folder, supported folders: " + String.join(", ", folder.SUPPORTED_FOLDERS));
         }
 
-        if(folder.getMessageCount() >= getFolderMessageCount(folder.getAccount(), folder.getName())){
-            throw new AppException("Folder already in sync!");
+        if(Boolean.TRUE.equals(folder.getIsSynced())){
+            throw new BadRequestException("Folder already in sync!");
         }
 
         FolderMessages folderMessages = getMessages(folder);
 
         folder.setMessageCount(folderMessages.getMessageCount());
+        folder.setIsSynced(true);
         folderRepository.save(folder);
 
         messageRepository.saveAll(folderMessages.getMessages());
         messageIndexService.bulkIndex(indexableMapper.convertToIndexables(folderMessages.getMessages()));
+
+        folderMessages.setMessages(messageRepository.findByFolderId(folder.getId(), com.example.mail.model.Message.defaultPaging).getContent());
 
         return folderMessages;
     }

@@ -48,7 +48,7 @@ public class ContactController {
             return contactRepository.findByUserId(currentUser.getId());
         }
 
-        return contactIndexService.search(query, currentUser.getId());
+        return contactIndexService.search(query, currentUser.getId(), Contact.defaultPaging);
     }
 
     @GetMapping("/users/{userId}/contacts")
@@ -58,7 +58,7 @@ public class ContactController {
             return contactRepository.findByUserId(userId);
         }
 
-        return contactIndexService.search(query, userId);
+        return contactIndexService.search(query, userId, Contact.defaultPaging);
     }
 
     @PostMapping("/contacts")
