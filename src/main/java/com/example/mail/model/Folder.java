@@ -20,11 +20,7 @@ public class Folder {
 
     @Transient
     @JsonIgnore
-    public final String FOLDER_SENT = "SENT";
-
-    @Transient
-    @JsonIgnore
-    public final String[] SUPPORTED_FOLDERS = { FOLDER_INBOX, FOLDER_SENT };
+    public final String[] SUPPORTED_FOLDERS = { FOLDER_INBOX };
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

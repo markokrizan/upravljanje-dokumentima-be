@@ -35,11 +35,6 @@ import com.example.mail.repository.MessageRepository;
 public class MailService {
 
     private final Integer MAX_MESSAGES = 50;
-
-    public final String FOLDER_INBOX = "INBOX";
-    public final String FOLDER_SENT = "SENT";
-    public final String[] SUPPORTED_FOLDERS = { FOLDER_INBOX, FOLDER_SENT };
-
     private final String DEFAULT_SESSION_PROTOCOL = "pop3s";
 
     @Autowired
@@ -175,16 +170,6 @@ public class MailService {
         return modelMessage;
     }
 
-    public Boolean isFolderSupported(String folder) {
-        List<String> supportedFolders = Arrays.asList(SUPPORTED_FOLDERS);
-
-        if(!supportedFolders.contains(folder.toUpperCase())) {
-            return false;
-        }
-
-        return true;
-    }
-
     public FolderMessages getMessages(com.example.mail.model.Folder folder){
         Account account = folder.getAccount();
         
@@ -195,8 +180,10 @@ public class MailService {
         return getFolderMessages(folder, account.getSmtpAdress(), Integer.toString(account.getSmtpPort()), account.getUsername(), account.getPassword());
     }
 
-    public Integer getFolderMessageCount(Account account, String folder) {
-        if(!account.isValid() || !this.isFolderSupported(folder)){
+    public Integer getFolderMessageCount(com.example.mail.model.Folder folder) {
+        Account account = folder.getAccount();
+        
+        if(!account.isValid() || !folder.getIsSupported()) {
             return null;
         }
 
@@ -204,7 +191,7 @@ public class MailService {
 
         try {
             FolderConnection folderConnection = this.connectToFolder(
-                folder, 
+                folder.getName(), 
                 account.getSmtpAdress(), 
                 Integer.toString(account.getSmtpPort()), 
                 account.getUsername(), 
@@ -232,7 +219,7 @@ public class MailService {
 
     @Transactional
     public FolderMessages syncFolderMessages(com.example.mail.model.Folder folder){
-        if(!isFolderSupported(folder.getName())){
+        if(!folder.getIsSupported()){
             throw new BadRequestException("Looking for an unsupported folder, supported folders: " + String.join(", ", folder.SUPPORTED_FOLDERS));
         }
 
