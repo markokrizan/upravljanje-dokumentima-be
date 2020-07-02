@@ -1,7 +1,8 @@
 package com.example.mail.controller;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
@@ -19,11 +20,14 @@ import com.example.mail.service.MessageIndexService;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.mail.payload.FolderMessages;
 import com.example.mail.payload.FolderRequest;
+import com.example.mail.payload.index.SearchResult;
 
 @RestController
 @RequestMapping("/api")
@@ -92,19 +96,22 @@ public class FolderController {
 
     @GetMapping("/accounts/{accountId}/folders/{folderId}/messages")
     @PreAuthorize("hasRole('USER')")
-    public FolderMessages getFolderMessages(@CurrentUser UserPrincipal currentUser, @PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId, @RequestParam(required = false) String query) {
-        FolderMessages folderMessages = new FolderMessages();
-        List<Message> messages = new ArrayList<>();
-
+    public List<SearchResult<Message>> getFolderMessages(
+        @CurrentUser UserPrincipal currentUser, 
+        @PathVariable("accountId") Long accountId, 
+        @PathVariable("folderId") Long folderId, 
+        @RequestParam(required = false) 
+        String query,
+        @PageableDefault(size = Message.DEFAULT_PER_PAGE) Pageable pageable
+    ) {
         if(query == null) {
-            messages = messageRepository.findByFolderId(folderId, Message.defaultPaging).getContent();
-        } else {
-            messages = messageIndexService.search(query, folderId, Message.defaultPaging);
-        }
+            List<Message> messages = messageRepository.findByFolderId(folderId, pageable).getContent();
 
-        folderMessages.setMessages(messages);
-        folderMessages.setMessageCount(messages.size());
+            return messages.stream()
+                .map(message -> new SearchResult<Message>(message, Collections.emptyMap()))
+                .collect(Collectors.toList());
+        } 
 
-        return folderMessages;
+        return messageIndexService.search(query, folderId, pageable);
     }
 }

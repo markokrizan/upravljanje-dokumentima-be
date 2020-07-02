@@ -6,11 +6,11 @@ import java.util.stream.Collectors;
 import com.example.mail.elastic.MessageElasticRepository;
 import com.example.mail.model.Message;
 import com.example.mail.payload.index.IndexableMessage;
+import com.example.mail.payload.index.SearchResult;
 import com.example.mail.payload.mappers.IndexableMessageMapper;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
@@ -19,6 +19,7 @@ import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilde
 import org.springframework.stereotype.Service;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.common.unit.Fuzziness;
@@ -39,7 +40,7 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
     private IndexableMessageMapper indexableModelMapper;
 
     @Override
-    public List<Message> search(String query, Long folderId, Pageable pageable) {
+    public List<SearchResult<Message>> search(String query, Long folderId, Pageable pageable) {
         SearchHits<IndexableMessage> messageSearchResults = elasticsearchTemplate.search(
             buildQuery(query, folderId, pageable != null ? pageable : Message.defaultPaging), 
             IndexableMessage.class, 
@@ -49,7 +50,7 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
         return messageSearchResults
             .getSearchHits()
             .stream()
-            .map(contact -> indexableModelMapper.convertFromIndexable(contact.getContent()))
+            .map(messageSearchResult -> new SearchResult<Message>(indexableModelMapper.convertFromIndexable(messageSearchResult.getContent()), messageSearchResult.getHighlightFields()))
             .collect(Collectors.toList());
     }
 
@@ -57,16 +58,24 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
     public NativeSearchQuery buildQuery(String query, Long folderId, Pageable pageable) {
         QueryBuilder messageFolderQuery = QueryBuilders.termQuery("folderId", folderId);
 
+        QueryBuilder messageTermQuery = QueryBuilders.multiMatchQuery(query)
+            .field("from")
+            .field("to")
+            .field("subject")
+            .field("content")
+            .operator(Operator.OR)
+            .fuzziness(Fuzziness.AUTO)
+            .prefixLength(3);
+ 
         return new NativeSearchQueryBuilder()
-                .withQuery(QueryBuilders.multiMatchQuery(query)
-                    .field("from")
-                    .field("to")
-                    .field("subject")
-                    .field("content")
-                    .operator(Operator.OR)
-                    .fuzziness(Fuzziness.AUTO)
-                    .prefixLength(3)
-                ).withFilter(messageFolderQuery)
+                .withQuery(messageTermQuery)
+                .withHighlightFields(
+                    new HighlightBuilder.Field("from"),
+                    new HighlightBuilder.Field("to"),
+                    new HighlightBuilder.Field("subject"),
+                    new HighlightBuilder.Field("content")
+                )
+                .withFilter(messageFolderQuery)
                 .withPageable(pageable)
             .build();
     }
