@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.common.unit.Fuzziness;
@@ -40,18 +41,23 @@ public class ContactIndexService implements IndexService<IndexableContact, Conta
     private IndexableContactMapper indexableModelMapper;
 
     @Override
-    public List<SearchResult<Contact>> search(String query, Long userId, Pageable pageable) {
-        SearchHits<IndexableContact> contactSearchResults = elasticsearchTemplate.search(
+    public PageImpl<SearchResult<Contact>> search(String query, Long userId, Pageable pageable) {
+        SearchHits<IndexableContact> rawResults = elasticsearchTemplate.search(
             buildQuery(query, userId, pageable != null ? pageable : Contact.defaultPaging), 
             IndexableContact.class, 
             IndexCoordinates.of("contacts")
         );
 
-        return contactSearchResults
+        List<SearchResult<Contact>> contactSearchResults = rawResults
             .getSearchHits()
             .stream()
             .map(contactSearchResult -> new SearchResult<Contact>(indexableModelMapper.convertFromIndexable(contactSearchResult.getContent()), contactSearchResult.getHighlightFields()))
             .collect(Collectors.toList());
+
+        return new PageImpl<SearchResult<Contact>>(
+            contactSearchResults, 
+            pageable, 
+            rawResults.getTotalHits());
     }
 
     @Override

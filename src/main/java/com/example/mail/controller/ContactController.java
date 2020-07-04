@@ -17,6 +17,10 @@ import com.example.mail.security.CurrentUser;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,30 +51,34 @@ public class ContactController {
 
     @GetMapping("/contacts")
     @PreAuthorize("hasRole('USER')")
-    public List<SearchResult<Contact>> getMyContacts(@RequestParam(required = false) String query, @CurrentUser UserPrincipal currentUser) {
+    public Page<SearchResult<Contact>> getMyContacts(@RequestParam(required = false) String query, @CurrentUser UserPrincipal currentUser, @PageableDefault(size = Contact.DEFAULT_PER_PAGE) Pageable pageable) {
         if(query == null) {
-            List<Contact> contacts = contactRepository.findByUserId(currentUser.getId());
+            List<Contact> contacts = contactRepository.findByUserId(currentUser.getId(), pageable).getContent();
 
-            return contacts.stream()
+            List<SearchResult<Contact>> results =  contacts.stream()
                 .map(contact -> new SearchResult<Contact>(contact, Collections.emptyMap()))
                 .collect(Collectors.toList());
+
+                return new PageImpl<SearchResult<Contact>>(results, pageable, contactRepository.count());
         } 
 
-        return contactIndexService.search(query, currentUser.getId(), Contact.defaultPaging);
+        return contactIndexService.search(query, currentUser.getId(), pageable);
     }
 
     @GetMapping("/users/{userId}/contacts")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<SearchResult<Contact>> getUserContacts(Long userId, @RequestParam(required = false) String query) {
+    public Page<SearchResult<Contact>> getUserContacts(Long userId, @RequestParam(required = false) String query, @PageableDefault(size = Contact.DEFAULT_PER_PAGE) Pageable pageable) {
         if(query == null) {
-            List<Contact> contacts = contactRepository.findByUserId(userId);
+            List<Contact> contacts = contactRepository.findByUserId(userId, pageable).getContent();
 
-            return contacts.stream()
+            List<SearchResult<Contact>> results = contacts.stream()
                 .map(contact -> new SearchResult<Contact>(contact, Collections.emptyMap()))
                 .collect(Collectors.toList());
+            
+                return new PageImpl<SearchResult<Contact>>(results, pageable, contactRepository.count());
         } 
 
-        return contactIndexService.search(query, userId, Contact.defaultPaging);
+        return contactIndexService.search(query, userId, pageable);
     }
 
     @PostMapping("/contacts")

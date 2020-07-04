@@ -11,6 +11,7 @@ import com.example.mail.payload.mappers.IndexableMessageMapper;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
@@ -40,18 +41,23 @@ public class MessageIndexService implements IndexService<IndexableMessage, Messa
     private IndexableMessageMapper indexableModelMapper;
 
     @Override
-    public List<SearchResult<Message>> search(String query, Long folderId, Pageable pageable) {
-        SearchHits<IndexableMessage> messageSearchResults = elasticsearchTemplate.search(
+    public PageImpl<SearchResult<Message>> search(String query, Long folderId, Pageable pageable) {
+        SearchHits<IndexableMessage> rawResults = elasticsearchTemplate.search(
             buildQuery(query, folderId, pageable != null ? pageable : Message.defaultPaging), 
             IndexableMessage.class, 
             IndexCoordinates.of("messages")
         );
 
-        return messageSearchResults
+        List<SearchResult<Message>> messageSearchResults = rawResults
             .getSearchHits()
             .stream()
             .map(messageSearchResult -> new SearchResult<Message>(indexableModelMapper.convertFromIndexable(messageSearchResult.getContent()), messageSearchResult.getHighlightFields()))
             .collect(Collectors.toList());
+
+        return new PageImpl<SearchResult<Message>>(
+            messageSearchResults, 
+            pageable, 
+            rawResults.getTotalHits());
     }
 
     @Override

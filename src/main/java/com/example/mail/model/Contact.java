@@ -15,7 +15,7 @@ import org.springframework.data.domain.Pageable;
 @Entity
 @Table(name = "contacts")
 public class Contact {   
-    public static final Integer DEFAULT_PER_PAGE = 10;
+    public static final int DEFAULT_PER_PAGE = 10;
     public static Pageable defaultPaging = PageRequest.of(0, DEFAULT_PER_PAGE);
 
     @Id

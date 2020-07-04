@@ -20,6 +20,8 @@ import com.example.mail.service.MessageIndexService;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -96,7 +98,7 @@ public class FolderController {
 
     @GetMapping("/accounts/{accountId}/folders/{folderId}/messages")
     @PreAuthorize("hasRole('USER')")
-    public List<SearchResult<Message>> getFolderMessages(
+    public Page<SearchResult<Message>> getFolderMessages(
         @CurrentUser UserPrincipal currentUser, 
         @PathVariable("accountId") Long accountId, 
         @PathVariable("folderId") Long folderId, 
@@ -107,9 +109,11 @@ public class FolderController {
         if(query == null) {
             List<Message> messages = messageRepository.findByFolderId(folderId, pageable).getContent();
 
-            return messages.stream()
+            List<SearchResult<Message>> results =  messages.stream()
                 .map(message -> new SearchResult<Message>(message, Collections.emptyMap()))
                 .collect(Collectors.toList());
+
+            return new PageImpl<SearchResult<Message>>(results, pageable, messageRepository.count());
         } 
 
         return messageIndexService.search(query, folderId, pageable);
