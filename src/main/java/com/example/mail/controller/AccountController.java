@@ -52,12 +52,12 @@ public class AccountController {
         if(accountRepository.countByUserId(currentUser.getId()) == 0) {
             account.setIsActive(true);
         }
+     
+        Account savedAccount = accountRepository.save(account);
 
         if(accountRequest.getIsActive()) {
-            accountService.toggleActiveAccount(account.getId(), currentUser.getId());
+            accountService.toggleActiveAccount(savedAccount.getId(), currentUser.getId());
         }
-        
-        accountRepository.save(account);
 
         return accountRepository.findByUserId(currentUser.getId());
     }

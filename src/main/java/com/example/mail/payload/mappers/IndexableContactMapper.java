@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import com.example.mail.model.Contact;
 import com.example.mail.payload.index.IndexableContact;
+import com.example.mail.repository.PhotoRepository;
 import com.example.mail.repository.UserRepository;
 
 import org.modelmapper.ModelMapper;
@@ -20,6 +21,9 @@ public class IndexableContactMapper implements IndexableMapper<IndexableContact,
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PhotoRepository photoRepository;
+
     @Override
     public IndexableContact convertToIndexable(Contact contact) {
         IndexableContact indexableContact = modelMapper.map(contact, IndexableContact.class);
@@ -34,6 +38,7 @@ public class IndexableContactMapper implements IndexableMapper<IndexableContact,
         Contact contact = modelMapper.map(indexableContact, Contact.class);
 
         contact.setUser(userRepository.findById(indexableContact.getUserId()).orElse(null));
+        contact.setPhotos(photoRepository.findByContactId(indexableContact.getId()));
 
         return contact;
     }

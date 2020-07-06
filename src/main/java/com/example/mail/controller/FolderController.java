@@ -22,6 +22,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -116,6 +117,19 @@ public class FolderController {
             return new PageImpl<SearchResult<Message>>(results, pageable, messageRepository.count());
         } 
 
-        return messageIndexService.search(query, folderId, pageable);
+        /**
+         *  Dirty fix:
+         * 
+         *  Remove sorting if present when searching - sorting is not appliacable to any filed by default
+         * 
+         *  es index fields need to be analized to be sortable
+         */
+        PageRequest pageableWithoutSorting = null;
+
+        if (pageable.getSort() != null) {
+            pageableWithoutSorting = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        }
+
+        return messageIndexService.search(query, folderId, pageableWithoutSorting != null ? pageableWithoutSorting : pageable);
     }
 }
