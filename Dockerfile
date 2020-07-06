@@ -1,6 +1,10 @@
 #### Stage 1: Build the application
 FROM openjdk:8-jdk-alpine as build
 
+#Set current work dir to root in order to create media dir
+WORKDIR /
+RUN mkdir -p images
+
 # Set the current working directory inside the image
 WORKDIR /app
 
