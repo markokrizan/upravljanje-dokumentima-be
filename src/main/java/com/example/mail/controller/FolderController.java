@@ -89,12 +89,23 @@ public class FolderController {
 
     @PutMapping("/accounts/{accountId}/folders/{folderId}/sync")
     @PreAuthorize("hasRole('USER')")
-    public FolderMessages syncFolder(@CurrentUser UserPrincipal currentUser, @PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId)
+    public PageImpl<SearchResult<Message>> syncFolder(@CurrentUser UserPrincipal currentUser, @PathVariable("accountId") Long accountId, @PathVariable("folderId") Long folderId)
         throws BadRequestException 
     {
         Folder folder = folderRepository.findById(folderId).get();
-       
-        return mailService.syncFolderMessages(folder);
+
+        FolderMessages folderMessages = mailService.syncFolderMessages(folder);
+
+        List<SearchResult<Message>> results =  folderMessages
+            .getMessages()
+            .stream()
+            .map(message -> new SearchResult<Message>(message, Collections.emptyMap()))
+            .collect(Collectors.toList());
+
+        return new PageImpl<SearchResult<Message>>(
+            results, 
+            PageRequest.of(0, Message.DEFAULT_PER_PAGE), 
+            messageRepository.countByFolderId(folderId));
     }
 
     @GetMapping("/accounts/{accountId}/folders/{folderId}/messages")
@@ -114,7 +125,7 @@ public class FolderController {
                 .map(message -> new SearchResult<Message>(message, Collections.emptyMap()))
                 .collect(Collectors.toList());
 
-            return new PageImpl<SearchResult<Message>>(results, pageable, messageRepository.count());
+            return new PageImpl<SearchResult<Message>>(results, pageable, messageRepository.countByFolderId(folderId));
         } 
 
         /**

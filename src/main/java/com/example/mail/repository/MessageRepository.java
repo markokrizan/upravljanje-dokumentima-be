@@ -10,4 +10,6 @@ import com.example.mail.model.Message;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
     Page<Message> findByFolderId(Long folderId, Pageable pageable);
+
+    int countByFolderId(Long eventCode);
 }
