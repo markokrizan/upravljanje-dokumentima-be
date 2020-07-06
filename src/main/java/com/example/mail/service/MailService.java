@@ -151,7 +151,7 @@ public class MailService {
         Address[] toAdresses = message.getRecipients(Message.RecipientType.TO);
         Address[] ccAdresses = message.getRecipients(Message.RecipientType.CC);
         Address[] bccAdresses = message.getRecipients(Message.RecipientType.BCC);
-        Date date = message.getReceivedDate();
+        Date date = message.getSentDate();
         String subject = message.getSubject();
         Boolean isRead = message.isSet(Flag.SEEN);
         String content = getMessageContent(message);

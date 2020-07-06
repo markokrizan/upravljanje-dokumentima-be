@@ -6,7 +6,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public class ContactRequest {
 
-    private String id;
+    private Long id;
 
     @NotBlank
     private String firstName;
@@ -25,11 +25,11 @@ public class ContactRequest {
 
     private MultipartFile photo;
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
